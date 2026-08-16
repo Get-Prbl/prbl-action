@@ -23,7 +23,7 @@ jobs:
   prbl:
     runs-on: ubuntu-latest
     steps:
-      - uses: noreplywmsplaybook-pixel/prbl-action@v1
+      - uses: Get-Prbl/prbl-action@v1
         with:
           api-key: ${{ secrets.PRBL_API_KEY }}
           # fail-on-high: true   # optional — block merges on high-severity findings
