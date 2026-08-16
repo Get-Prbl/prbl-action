@@ -1,0 +1,59 @@
+name: 'Prbl Security Scan'
+description: 'Find the security holes AI code generators leave behind. Scans on every push/PR and comments the findings right in the pull request.'
+author: 'Prbl'
+branding:
+  icon: 'shield'
+  color: 'green'
+inputs:
+  api-key:
+    description: 'Your Prbl API key (getprbl.com dashboard -> Settings). Store it as a repo secret, e.g. PRBL_API_KEY.'
+    required: true
+  fail-on-high:
+    description: 'Fail the build when a high-severity finding is present (recommended for protected branches).'
+    required: false
+    default: 'false'
+runs:
+  using: 'composite'
+  steps:
+    - name: Prbl scan
+      id: scan
+      shell: bash
+      run: |
+        RESULT=$(curl -s -X POST https://prbl-dashboard.vercel.app/api/ci/scan \
+          -H "Authorization: Bearer ${{ inputs.api-key }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"repo\": \"${{ github.repository }}\", \"github_token\": \"${{ github.token }}\"}")
+        HIGH=$(echo "$RESULT" | jq -r '.counts.high // 0')
+        MED=$(echo "$RESULT" | jq -r '.counts.medium // 0')
+        LOW=$(echo "$RESULT" | jq -r '.counts.low // 0')
+        FINDINGS=$(echo "$RESULT" | jq -r '(.findings // [])[0:10][] | "- **" + ((.severity // "info") | ascii_upcase) + "** " + (.title // .rule_id // "finding") + "  " + (.file_path // "") + (if .line_number then ":" + (.line_number | tostring) else "" end)')
+        {
+          echo "<!-- prbl -->"
+          echo "### Prbl security scan"
+          echo ""
+          echo "**$HIGH high | $MED medium | $LOW low**"
+          echo ""
+          if [ -n "$FINDINGS" ]; then echo "$FINDINGS"; else echo "No issues found."; fi
+          echo ""
+          echo "[Full report and one-click fixes](https://getprbl.com)"
+        } > prbl_comment.md
+        echo "high=$HIGH" >> "$GITHUB_OUTPUT"
+    - name: Comment findings on the pull request
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const body = fs.readFileSync('prbl_comment.md', 'utf8');
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const list = await github.rest.issues.listComments({ owner, repo, issue_number });
+          const prev = list.data.find(c => c.body && c.body.indexOf('<!-- prbl -->') === 0);
+          if (prev) { await github.rest.issues.updateComment({ owner, repo, comment_id: prev.id, body }); }
+          else { await github.rest.issues.createComment({ owner, repo, issue_number, body }); }
+    - name: Fail on high severity
+      if: inputs.fail-on-high == 'true' && steps.scan.outputs.high != '0'
+      shell: bash
+      run: |
+        echo "::error::Prbl found ${{ steps.scan.outputs.high }} high-severity issue(s)"
+        exit 1
