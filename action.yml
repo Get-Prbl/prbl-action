@@ -1,5 +1,5 @@
 name: 'Prbl Security Scan'
-description: 'Find the security holes AI code generators leave behind. Scans on every push/PR and comments the findings right in the pull request.'
+description: 'Scan your code for the security holes AI generators leave behind. Comments findings on every pull request.'
 author: 'Prbl'
 branding:
   icon: 'shield'
