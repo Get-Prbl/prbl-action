@@ -35,7 +35,9 @@ runs:
           echo ""
           if [ -n "$FINDINGS" ]; then echo "$FINDINGS"; else echo "No issues found."; fi
           echo ""
-          echo "[Full report and one-click fixes](https://getprbl.com)"
+          echo "[View the full report and apply one-click fixes](https://getprbl.com)"
+          echo ""
+          echo "<sub>Scanned by <a href=\"https://getprbl.com/scan\">Prbl</a>, a free security scanner for AI-generated code. <a href=\"https://getprbl.com/scan\">Scan your own app or repo</a>, no account needed.</sub>"
         } > prbl_comment.md
         echo "high=$HIGH" >> "$GITHUB_OUTPUT"
     - name: Comment findings on the pull request
