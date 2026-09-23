@@ -10,7 +10,11 @@ issues get caught before they merge.
 - Pro plan: also fails the build on high-severity findings, and the AI rewriter applies and verifies fixes
 - Get an API key at [getprbl.com](https://getprbl.com)
 
-## Usage
+## Easiest: install the GitHub App
+
+No workflow file, no API key. Install [Prbl Security](https://github.com/apps/prbl-security) on your account or org and every pull request gets a `prbl[bot]` comment with the findings, updated on each push. Free.
+
+## Or: use this Action
 
 Add `.github/workflows/prbl.yml`:
 
