@@ -6,8 +6,9 @@ issues get caught before they merge.
 
 - Exposed API keys, disabled TLS checks, missing auth, and other AI-introduced flaws
 - Inline PR comments (updated on every push)
-- Optional: fail the build on high-severity findings
-- Free. Get an API key at [getprbl.com](https://getprbl.com)
+- Free plan: scans every push and pull request and comments findings
+- Pro plan: also fails the build on high-severity findings, and the AI rewriter applies and verifies fixes
+- Get an API key at [getprbl.com](https://getprbl.com)
 
 ## Usage
 
@@ -26,7 +27,7 @@ jobs:
       - uses: Get-Prbl/prbl-action@v1
         with:
           api-key: ${{ secrets.PRBL_API_KEY }}
-          # fail-on-high: true   # optional — block merges on high-severity findings
+          # fail-on-high: true   # Pro: block merges on high-severity findings
 ```
 
 Then add your API key (dashboard → Settings) as a repo secret named `PRBL_API_KEY`
@@ -37,7 +38,7 @@ Then add your API key (dashboard → Settings) as a repo secret named `PRBL_API_
 | Input | Required | Default | Description |
 |---|---|---|---|
 | `api-key` | yes | — | Your Prbl API key. Store as a secret. |
-| `fail-on-high` | no | `false` | Fail the build when a high-severity finding is present. |
+| `fail-on-high` | no | `false` | Fail the build when a high-severity finding is present. Pro plan; on free the Action warns instead. |
 
 ## Badge
 

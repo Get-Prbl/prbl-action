@@ -9,7 +9,7 @@ inputs:
     description: 'Your Prbl API key (getprbl.com dashboard -> Settings). Store it as a repo secret, e.g. PRBL_API_KEY.'
     required: true
   fail-on-high:
-    description: 'Fail the build when a high-severity finding is present (recommended for protected branches).'
+    description: 'Fail the build when a high-severity finding is present (Pro plan). On the free plan the Action comments findings and stays advisory.'
     required: false
     default: 'false'
 runs:
@@ -39,7 +39,9 @@ runs:
           echo ""
           echo "<sub>Scanned by <a href=\"https://getprbl.com/scan\">Prbl</a>, a free security scanner for AI-generated code. <a href=\"https://getprbl.com/scan\">Scan your own app or repo</a>, no account needed.</sub>"
         } > prbl_comment.md
+        PLAN=$(echo "$RESULT" | jq -r '.plan // "free"')
         echo "high=$HIGH" >> "$GITHUB_OUTPUT"
+        echo "plan=$PLAN" >> "$GITHUB_OUTPUT"
     - name: Comment findings on the pull request
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
@@ -53,9 +55,14 @@ runs:
           const prev = list.data.find(c => c.body && c.body.indexOf('<!-- prbl -->') === 0);
           if (prev) { await github.rest.issues.updateComment({ owner, repo, comment_id: prev.id, body }); }
           else { await github.rest.issues.createComment({ owner, repo, issue_number, body }); }
-    - name: Fail on high severity
-      if: inputs.fail-on-high == 'true' && steps.scan.outputs.high != '0'
+    - name: Fail on high severity (Pro)
+      if: inputs.fail-on-high == 'true' && steps.scan.outputs.high != '0' && steps.scan.outputs.plan != 'free'
       shell: bash
       run: |
         echo "::error::Prbl found ${{ steps.scan.outputs.high }} high-severity issue(s)"
         exit 1
+    - name: fail-on-high requires Pro
+      if: inputs.fail-on-high == 'true' && steps.scan.outputs.high != '0' && steps.scan.outputs.plan == 'free'
+      shell: bash
+      run: |
+        echo "::warning::Prbl found ${{ steps.scan.outputs.high }} high-severity issue(s). Blocking the merge with fail-on-high is a Pro feature; the free plan comments findings only. Upgrade at https://getprbl.com/#pricing"
